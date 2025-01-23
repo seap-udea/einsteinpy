@@ -49,7 +49,7 @@ class RicciTensor(BaseRelativityTensor):
             raise ValueError("config should be of length {}".format(self._order))
 
     @classmethod
-    def from_riemann(cls, riemann, parent_metric=None):
+    def from_riemann(cls, riemann, parent_metric=None, sign=-1):
         """
         Get Ricci Tensor calculated from Riemann Tensor
 
@@ -64,7 +64,7 @@ class RicciTensor(BaseRelativityTensor):
 
         """
         if not riemann.config == "ulll":
-            riemann = riemann.change_config(newconfig="ulll", metric=parent_metric)
+            riemann = riemann.change_config(newconfig="ulll", metric=parent_metric, sign=sign)
         if parent_metric is None:
             parent_metric = riemann.parent_metric
         return cls(
@@ -75,7 +75,7 @@ class RicciTensor(BaseRelativityTensor):
         )
 
     @classmethod
-    def from_christoffels(cls, chris, parent_metric=None):
+    def from_christoffels(cls, chris, parent_metric=None, sign=-1):
         """
         Get Ricci Tensor calculated from Christoffel Tensor
 
@@ -90,12 +90,12 @@ class RicciTensor(BaseRelativityTensor):
 
         """
         rt = RiemannCurvatureTensor.from_christoffels(
-            chris, parent_metric=parent_metric
+            chris, parent_metric=parent_metric, sign=sign
         )
         return cls.from_riemann(rt)
 
     @classmethod
-    def from_metric(cls, metric):
+    def from_metric(cls, metric, sign=-1):
         """
         Get Ricci Tensor calculated from Metric Tensor
 
@@ -106,7 +106,7 @@ class RicciTensor(BaseRelativityTensor):
 
         """
         ch = ChristoffelSymbols.from_metric(metric)
-        return cls.from_christoffels(ch, parent_metric=None)
+        return cls.from_christoffels(ch, parent_metric=None, sign=sign)
 
     def change_config(self, newconfig="ul", metric=None):
         """

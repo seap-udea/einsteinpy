@@ -48,9 +48,9 @@ class EinsteinTensor(BaseRelativityTensor):
             raise ValueError("config should be of length {}".format(self._order))
 
     @classmethod
-    def from_metric(cls, metric):
-        t_ricci = RicciTensor.from_metric(metric)
-        r_scalar = RicciScalar.from_riccitensor(t_ricci, t_ricci.parent_metric)
+    def from_metric(cls, metric, sign=-1):
+        t_ricci = RicciTensor.from_metric(metric,sign=sign)
+        r_scalar = RicciScalar.from_riccitensor(t_ricci, t_ricci.parent_metric, sign=sign)
         einstein_tensor = (
             t_ricci.tensor() - (1 / 2) * metric.lower_config().tensor() * r_scalar.expr
         )

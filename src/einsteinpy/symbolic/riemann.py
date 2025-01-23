@@ -21,7 +21,7 @@ class RiemannCurvatureTensor(BaseRelativityTensor):
     ):
         """
         Constructor and Initializer
-
+        
         Parameters
         ----------
         arr : ~sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray or list
@@ -43,7 +43,7 @@ class RiemannCurvatureTensor(BaseRelativityTensor):
             syms is not a list or tuple
         ValueError
             config has more or less than 4 indices
-
+        
         """
         super(RiemannCurvatureTensor, self).__init__(
             arr=arr, syms=syms, config=config, parent_metric=parent_metric, name=name
@@ -55,12 +55,17 @@ class RiemannCurvatureTensor(BaseRelativityTensor):
     @classmethod
     def from_christoffels(cls, chris, parent_metric=None):
         """
-        Get Riemann Tensor calculated from Christoffel Symbols.
-        Reimann Tensor is given as:
+        Get Riemann Tensor calculated from a Christoffel Symbols
 
         .. math::
             R^{t}{}_{s r n}=\\Gamma^{t}{}_{s n, r} - \\Gamma^{t }{}_{s r, n } +
              \\Gamma^{p}{}_{s n}\\Gamma^{t}{}_{p r} - \\Gamma^{p}{}_{s r}\\Gamma^{t}{}_{p n}
+
+            Corrected (natural signs for deviation equation having same sings as tidal equation:
+
+            R^{t}{}_{s r n}=\\Gamma^{t}{}_{s r, n} - \\Gamma^{t }{}_{n r, s } +
+             \\Gamma^{p}{}_{s r}\\Gamma^{t}{}_{p n} - \\Gamma^{p}{}_{s n}\\Gamma^{t}{}_{p r}
+        
 
         Parameters
         ----------
@@ -70,24 +75,28 @@ class RiemannCurvatureTensor(BaseRelativityTensor):
             Corresponding Metric for the Riemann Tensor.
             None if it should inherit the Parent Metric of Christoffel Symbols.
             Defaults to None.
-
+        
         """
         if not chris.config == "ull":
             chris = chris.change_config(newconfig="ull", metric=parent_metric)
         arr, syms = chris.tensor(), chris.symbols()
         dims = len(syms)
         riemann_list = (np.zeros(shape=(dims, dims, dims, dims), dtype=int)).tolist()
-        for i in range(dims**4):
+        for i in range(dims ** 4):
             # t,s,r,n each goes from 0 to (dims-1)
             # hack for codeclimate. Could be done with 4 nested for loops
             n = i % dims
             r = (int(i / dims)) % (dims)
-            s = (int(i / (dims**2))) % (dims)
-            t = (int(i / (dims**3))) % (dims)
-            temp = sympy.diff(arr[t, s, n], syms[r]) - sympy.diff(arr[t, s, r], syms[n])
+            s = (int(i / (dims ** 2))) % (dims)
+            t = (int(i / (dims ** 3))) % (dims)
+            #temp = sympy.diff(arr[t, s, n], syms[r]) - sympy.diff(arr[t, r, n], syms[s]) # Original
+            #temp = sympy.diff(arr[t, s, n], syms[r]) - sympy.diff(arr[t, s, r], syms[n]) # Lambourne
+            temp = sympy.diff(arr[t, s, r], syms[n]) - sympy.diff(arr[t, s, n], syms[r]) # Zuluaga
             for p in range(dims):
-                temp += arr[p, s, n] * arr[t, p, r] - arr[p, s, r] * arr[t, p, n]
-            riemann_list[t][s][r][n] = sympy.simplify(temp)
+                #temp += arr[p, s, n] * arr[t, p, r] - arr[p, r, n] * arr[t, p, s] # Original
+                #temp += arr[p, s, n] * arr[t, p, r] - arr[p, s, r] * arr[t, p, n] # Lambourne
+                temp += arr[p, s, r] * arr[t, n, p] - arr[p, s, n] * arr[t, r, p] # Zuluaga
+                riemann_list[t][s][r][n] = sympy.simplify(temp)
         if parent_metric is None:
             parent_metric = chris.parent_metric
         return cls(riemann_list, syms, config="ulll", parent_metric=parent_metric)
@@ -101,7 +110,7 @@ class RiemannCurvatureTensor(BaseRelativityTensor):
         ----------
         metric : ~einsteinpy.symbolic.metric.MetricTensor
             Metric Tensor from which Riemann Curvature Tensor to be calculated
-
+        
         """
         ch = ChristoffelSymbols.from_metric(metric)
         return cls.from_christoffels(ch, parent_metric=None)
@@ -116,7 +125,7 @@ class RiemannCurvatureTensor(BaseRelativityTensor):
             Specify the new configuration. Defaults to 'llll'
         metric : ~einsteinpy.symbolic.metric.MetricTensor or None
             Parent metric tensor for changing indices.
-            Already assumes the value of the metric tensor from which it was initialized if passed with None.
+            Already assumes the value of the metric tensor from which it was initialized if passed with None. 
             Compulsory if not initialized with 'from_metric'. Defaults to None.
 
         Returns

@@ -53,15 +53,17 @@ class RiemannCurvatureTensor(BaseRelativityTensor):
             raise ValueError("config should be of length {}".format(self._order))
 
     @classmethod
-    def from_christoffels(cls, chris, parent_metric=None):
+    def from_christoffels(cls, chris, parent_metric=None, sign=-1):
         """
         Get Riemann Tensor calculated from a Christoffel Symbols
 
         .. math::
+            Geodesic deviation equation: eta = R eta U U
+        
             R^{t}{}_{s r n}=\\Gamma^{t}{}_{s n, r} - \\Gamma^{t }{}_{s r, n } +
              \\Gamma^{p}{}_{s n}\\Gamma^{t}{}_{p r} - \\Gamma^{p}{}_{s r}\\Gamma^{t}{}_{p n}
 
-            Corrected (natural signs for deviation equation having same sings as tidal equation:
+            Geodesic deviation equation: eta'' = -R eta U U
 
             R^{t}{}_{s r n}=\\Gamma^{t}{}_{s r, n} - \\Gamma^{t }{}_{n r, s } +
              \\Gamma^{p}{}_{s r}\\Gamma^{t}{}_{p n} - \\Gamma^{p}{}_{s n}\\Gamma^{t}{}_{p r}
@@ -89,20 +91,16 @@ class RiemannCurvatureTensor(BaseRelativityTensor):
             r = (int(i / dims)) % (dims)
             s = (int(i / (dims ** 2))) % (dims)
             t = (int(i / (dims ** 3))) % (dims)
-            #temp = sympy.diff(arr[t, s, n], syms[r]) - sympy.diff(arr[t, r, n], syms[s]) # Original
-            #temp = sympy.diff(arr[t, s, n], syms[r]) - sympy.diff(arr[t, s, r], syms[n]) # Lambourne
-            temp = sympy.diff(arr[t, s, r], syms[n]) - sympy.diff(arr[t, s, n], syms[r]) # Zuluaga
+            temp = -sign*(sympy.diff(arr[t, s, r], syms[n]) - sympy.diff(arr[t, s, n], syms[r]))
             for p in range(dims):
-                #temp += arr[p, s, n] * arr[t, p, r] - arr[p, r, n] * arr[t, p, s] # Original
-                #temp += arr[p, s, n] * arr[t, p, r] - arr[p, s, r] * arr[t, p, n] # Lambourne
-                temp += arr[p, s, r] * arr[t, n, p] - arr[p, s, n] * arr[t, r, p] # Zuluaga
+                temp += -sign*(arr[p, s, r] * arr[t, n, p] - arr[p, s, n] * arr[t, r, p])
                 riemann_list[t][s][r][n] = sympy.simplify(temp)
         if parent_metric is None:
             parent_metric = chris.parent_metric
         return cls(riemann_list, syms, config="ulll", parent_metric=parent_metric)
 
     @classmethod
-    def from_metric(cls, metric):
+    def from_metric(cls, metric, sign=-1):
         """
         Get Riemann Tensor calculated from a Metric Tensor
 
@@ -113,7 +111,7 @@ class RiemannCurvatureTensor(BaseRelativityTensor):
         
         """
         ch = ChristoffelSymbols.from_metric(metric)
-        return cls.from_christoffels(ch, parent_metric=None)
+        return cls.from_christoffels(ch, parent_metric=None, sign=sign)
 
     def change_config(self, newconfig="llll", metric=None):
         """

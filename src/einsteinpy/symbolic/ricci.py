@@ -214,7 +214,7 @@ class RicciScalar(BaseRelativityTensor):
         return val
 
     @classmethod
-    def from_riccitensor(cls, riccitensor, parent_metric=None):
+    def from_riccitensor(cls, riccitensor, parent_metric=None, sign=-1):
         """
         Get Ricci Scalar calculated from Ricci Tensor
 
@@ -242,7 +242,7 @@ class RicciScalar(BaseRelativityTensor):
         )
 
     @classmethod
-    def from_riemann(cls, riemann, parent_metric=None):
+    def from_riemann(cls, riemann, parent_metric=None, sign=-1):
         """
         Get Ricci Scalar calculated from Riemann Tensor
 
@@ -256,11 +256,11 @@ class RicciScalar(BaseRelativityTensor):
 
         """
 
-        cg = RicciTensor.from_riemann(riemann, parent_metric=parent_metric)
+        cg = RicciTensor.from_riemann(riemann, parent_metric=parent_metric, sign=sign)
         return cls.from_riccitensor(cg)
 
     @classmethod
-    def from_christoffels(cls, chris, parent_metric=None):
+    def from_christoffels(cls, chris, parent_metric=None,sign=-1):
         """
         Get Ricci Scalar calculated from Christoffel Tensor
 
@@ -274,12 +274,12 @@ class RicciScalar(BaseRelativityTensor):
 
         """
         rt = RiemannCurvatureTensor.from_christoffels(
-            chris, parent_metric=parent_metric
+            chris, parent_metric=parent_metric, sign=sign
         )
         return cls.from_riemann(rt)
 
     @classmethod
-    def from_metric(cls, metric):
+    def from_metric(cls, metric, sign=-1):
         """
         Get Ricci Scalar calculated from Metric Tensor
 
@@ -290,4 +290,4 @@ class RicciScalar(BaseRelativityTensor):
 
         """
         ch = ChristoffelSymbols.from_metric(metric)
-        return cls.from_christoffels(ch, parent_metric=None)
+        return cls.from_christoffels(ch, parent_metric=None,sign=sign)
